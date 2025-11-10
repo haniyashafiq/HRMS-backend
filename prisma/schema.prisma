@@ -1,0 +1,254 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+/**
+ * enums
+ */
+enum EmploymentStatus {
+  ACTIVE
+  INACTIVE
+  TERMINATED
+}
+
+enum LeaveStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum AttachmentType {
+  PROFILE_PHOTO
+  RESUME
+  CERTIFICATE
+  OTHER
+}
+
+enum UserRole {
+  ADMIN
+  HR
+  EMPLOYEE
+}
+
+enum AttendanceStatus {
+  PRESENT
+  ABSENT
+  LEAVE
+}
+
+/**
+ * Auth / Account
+ */
+model UserAccount {
+  id           Int       @id @default(autoincrement())
+  email        String    @unique
+  passwordHash String
+  role         UserRole  @default(EMPLOYEE)
+  // one-to-one link to Employee (optional). Keep the FK and constraints on this side only.
+  employeeId   Int?      @unique
+  employee     Employee? @relation(fields: [employeeId], references: [id], onDelete: SetNull)
+
+  // password-reset & verification support
+  resetToken       String?
+  resetTokenExpiry DateTime?
+  verified         Boolean   @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // attachments uploaded before employee created (optional)
+  attachments Attachment[]
+
+  @@index([employeeId])
+}
+
+/**
+ * Primary Employee (profile/business data).
+ * Note: email is nullable here — use UserAccount.email as source of truth.
+ */
+model Employee {
+  id              Int              @id @default(autoincrement())
+  employeeCode    String?          @unique
+  firstName       String
+  lastName        String?
+  cnic            String?          @unique
+  city            String?
+  qualification   String?
+  previousCompany String?
+  phone           String?
+  whatsappNumber  String?
+  linkedin        String?
+  github          String?
+  portfolioLink   String?
+  applyDomainId   Int?
+  applyDomain     Domain?          @relation(fields: [applyDomainId], references: [id], onDelete: SetNull)
+  jobTitle        String?
+  departmentId    Int?
+  department      Department?      @relation(fields: [departmentId], references: [id], onDelete: SetNull)
+  status          EmploymentStatus @default(ACTIVE)
+  dateOfBirth     DateTime?
+  hireDate        DateTime?
+  address         String?
+  cityRegion      String?
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+
+  attachments   Attachment[]
+  tools         EmployeeTool[]
+  domains       EmployeeDomain[]
+  employeeRoles EmployeeRole[]
+  attendances   Attendance[]
+  leaves        Leave[]
+  // inverse side of the optional one-to-one to UserAccount (no fields/references here)
+  userAccount   UserAccount?
+
+  // back-reference for departments where this employee is manager
+  managedDepartments Department[] @relation("DepartmentManager")
+
+  @@index([departmentId])
+}
+
+/**
+ * Attachments: allow linking to employee or userAccount (attachment during signup)
+ */
+model Attachment {
+  id            Int            @id @default(autoincrement())
+  employeeId    Int?
+  employee      Employee?      @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  userAccountId Int?
+  userAccount   UserAccount?   @relation(fields: [userAccountId], references: [id], onDelete: Cascade)
+  type          AttachmentType
+  filename      String
+  url           String
+  mimeType      String?
+  description   String?
+  uploadedAt    DateTime       @default(now())
+
+  @@index([employeeId])
+  @@index([userAccountId])
+}
+
+/**
+ * Tools master + junction
+ */
+model Tool {
+  id          Int      @id @default(autoincrement())
+  name        String   @unique
+  description String?
+  createdAt   DateTime @default(now())
+
+  employees EmployeeTool[]
+}
+
+model EmployeeTool {
+  id          Int       @id @default(autoincrement())
+  employee    Employee  @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  employeeId  Int
+  tool        Tool      @relation(fields: [toolId], references: [id], onDelete: Cascade)
+  toolId      Int
+  notes       String?
+  usedSince   DateTime?
+  proficiency String?
+  assignedAt  DateTime  @default(now())
+
+  @@unique([employeeId, toolId])
+  @@index([employeeId])
+  @@index([toolId])
+}
+
+/**
+ * Domains + junction
+ */
+model Domain {
+  id          Int      @id @default(autoincrement())
+  name        String   @unique
+  description String?
+  createdAt   DateTime @default(now())
+
+  employees  EmployeeDomain[]
+  // applicants: inverse relation for Employee.applyDomain (one Domain can be applied-to by many Employees)
+  applicants Employee[]
+}
+
+model EmployeeDomain {
+  id         Int      @id @default(autoincrement())
+  employee   Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  employeeId Int
+  domain     Domain   @relation(fields: [domainId], references: [id], onDelete: Cascade)
+  domainId   Int
+  addedAt    DateTime @default(now())
+
+  @@unique([employeeId, domainId])
+  @@index([employeeId])
+  @@index([domainId])
+}
+
+/**
+ * Departments / Roles
+ */
+model Department {
+  id          Int        @id @default(autoincrement())
+  name        String     @unique
+  description String?
+  managerId   Int?
+  manager     Employee?  @relation("DepartmentManager", fields: [managerId], references: [id], onDelete: SetNull)
+  employees   Employee[]
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+}
+
+model Role {
+  id          Int            @id @default(autoincrement())
+  name        String         @unique
+  description String?
+  employees   EmployeeRole[]
+}
+
+model EmployeeRole {
+  id         Int      @id @default(autoincrement())
+  employeeId Int
+  roleId     Int
+  employee   Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  role       Role     @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  assignedAt DateTime @default(now())
+
+  @@index([employeeId])
+  @@index([roleId])
+}
+
+/**
+ * Attendance & Leave improvements
+ */
+model Attendance {
+  id         Int              @id @default(autoincrement())
+  employeeId Int
+  employee   Employee         @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  date       DateTime
+  checkIn    DateTime?
+  checkOut   DateTime?
+  status     AttendanceStatus
+  createdAt  DateTime         @default(now())
+
+  @@index([employeeId])
+  @@index([date])
+}
+
+model Leave {
+  id         Int         @id @default(autoincrement())
+  employeeId Int
+  employee   Employee    @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  leaveType  String
+  startDate  DateTime
+  endDate    DateTime
+  reason     String?
+  status     LeaveStatus @default(PENDING)
+  appliedAt  DateTime    @default(now())
+
+  @@index([employeeId])
+  @@index([startDate, endDate])
+}
