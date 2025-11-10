@@ -62,3 +62,5 @@ aws-credentials.json
 
 # --- Optional if you use Husky / Lint-Staged ---
 .husky/_/
+
+firebase-service-account.json
