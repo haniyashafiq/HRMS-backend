@@ -252,3 +252,25 @@ model Leave {
   @@index([employeeId])
   @@index([startDate, endDate])
 }
+
+model Applicant {
+  id             Int       @id @default(autoincrement())
+  name           String
+  cnic           String
+  city           String
+  qualification  String
+  previousOrg    String
+  contactNumber  String
+  whatsappNumber String
+  email          String     @unique
+  linkedin       String?
+  domainApplied  String
+  tools          String[]   // many selected tools
+  github         String?
+  profilePhoto   String?    // file URL
+  resume         String?    // file URL
+  certificates   String[]   // array of file URLs
+
+  createdAt      DateTime   @default(now())
+}
+
