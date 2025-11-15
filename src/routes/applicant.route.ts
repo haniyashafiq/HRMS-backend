@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { createApplicant } from "../controllers/applicant.controller.js";
+import { createApplicant, getApplicantById, updateApplicant } from "../controllers/applicant.controller.js";
 import { upload } from "../middlewares/upload.middleware.js";
 
 const router = Router();
@@ -13,5 +13,8 @@ router.post(
   ]),
   createApplicant
 );
+
+router.get("/:id", getApplicantById);
+router.put("/:id", updateApplicant);
 
 export default router;
