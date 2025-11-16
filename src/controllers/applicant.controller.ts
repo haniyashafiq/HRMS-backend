@@ -1,7 +1,12 @@
 import { Request, Response } from 'express';
 import { ApplicantSchema } from '../dtos/applicant/applicant.dto.js';
-import { createApplicantService, updateApplicantService } from '../services/applicant.service.js';
+import { setPasswordSchema } from '../dtos/applicant/applicantPassword.dto.js';
 import { updateApplicantSchema } from '../dtos/applicant/applicantUpdate.dto.js';
+import {
+  createApplicantService,
+  setApplicantPassword,
+  updateApplicantService,
+} from '../services/applicant.service.js';
 export const createApplicant = async (req: Request, res: Response) => {
   try {
     // Extract uploaded files
@@ -37,7 +42,7 @@ export const getApplicantById = async (req: Request, res: Response) => {
     if (!applicant) {
       return res.status(404).json({
         success: false,
-        message: "Applicant not found"
+        message: 'Applicant not found',
       });
     }
 
@@ -45,8 +50,8 @@ export const getApplicantById = async (req: Request, res: Response) => {
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: "Server error",
-      error
+      message: 'Server error',
+      error,
     });
   }
 };
@@ -61,7 +66,7 @@ export const updateApplicant = async (req: Request, res: Response) => {
     if (!parsed.success) {
       return res.status(400).json({
         success: false,
-        message: parsed.error.issues
+        message: parsed.error.issues,
       });
     }
 
@@ -71,8 +76,29 @@ export const updateApplicant = async (req: Request, res: Response) => {
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: "Server error",
-      error
+      message: 'Server error',
+      error,
     });
+  }
+};
+
+export const setPassword = async (req: Request, res: Response) => {
+  try {
+    const id = Number(req.params.id);
+
+    const parsed = setPasswordSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json(parsed.error.issues);
+    }
+
+    const updatedApplicant = await setApplicantPassword(id, parsed.data);
+
+    return res.status(200).json({
+      message: 'Password set successfully',
+      applicant: updatedApplicant,
+    });
+  } catch (error: unknown) {
+    console.error(error);
+    return res.status(500).json({ message: 'Failed to set password' });
   }
 };

@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { createApplicant, getApplicantById, updateApplicant } from "../controllers/applicant.controller.js";
 import { upload } from "../middlewares/upload.middleware.js";
+import { setPassword } from "../controllers/applicant.controller.js";
 
 const router = Router();
 
@@ -16,5 +17,8 @@ router.post(
 
 router.get("/:id", getApplicantById);
 router.put("/:id", updateApplicant);
+
+// Set password
+router.post("/:id/set-password", setPassword);
 
 export default router;

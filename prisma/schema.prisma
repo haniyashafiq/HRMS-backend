@@ -270,7 +270,7 @@ model Applicant {
   profilePhoto   String?    // file URL
   resume         String?    // file URL
   certificates   String[]   // array of file URLs
-
+  passwordHash   String?
   createdAt      DateTime   @default(now())
 }
 
