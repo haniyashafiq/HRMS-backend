@@ -1,5 +1,5 @@
-import type { UserRole } from "@prisma/client";
-
+import type { Applicant } from '@prisma/client';
+import type { Request } from 'express';
 // export interface JwtPayload {
 //   id: number;          // UserAccount.id
 //   role: UserRole;      // Admin, HR, Employee
@@ -7,12 +7,13 @@ import type { UserRole } from "@prisma/client";
 // }
 
 export interface JwtPayload {
-  id: number;          // UserAccount.id
+  id: number; // UserAccount.id
   email: string;
- 
 }
 
-export interface AuthRequest extends Request { //applicant login middleware uses this
-   headers: Request['headers'] & { authorization?: string }; // add authorization
-  user?: { id: number; email: string };
+export interface AuthRequest extends Request {
+  //applicant login middleware uses this
+  headers: Request['headers'] & { authorization?: string }; // add authorization
+  authUser?: Applicant;
+  files?: Record<string, Express.Multer.File[]>;
 }

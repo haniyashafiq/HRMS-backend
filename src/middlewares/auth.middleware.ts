@@ -1,10 +1,10 @@
-import { type Request, type Response, type NextFunction } from 'express';
-import { verifyToken } from '../utils/jwt.js';
+import { type NextFunction, type Request, type Response } from 'express';
 import prisma from '../database/prisma.js';
 import type { JwtPayload } from '../interfaces/jwt.interface.js';
-import ApiError from '../utils/ApiError.js';
-import type { IUser } from '../interfaces/user.interface.js';
 import { AuthRequest } from '../interfaces/jwt.interface.js';
+import type { IUser } from '../interfaces/user.interface.js';
+import ApiError from '../utils/ApiError.js';
+import { verifyToken } from '../utils/jwt.js';
 export const authenticate = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const authHeader = req.headers.authorization;
@@ -35,24 +35,22 @@ export const authenticate = async (req: Request, res: Response, next: NextFuncti
   }
 };
 
-export const authenticateApplicant = async (
-  req: AuthRequest,
-  res: Response,
-  next: NextFunction
-) => {
+export const authenticateApplicant = async (req: Request, res: Response, next: NextFunction) => {
+  const authReq = req as AuthRequest;
   try {
     const authHeader = req.headers.authorization;
 
-    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
       return res.status(401).json({
         success: false,
-        message: "No token provided",
+        message: 'No token provided',
       });
     }
 
-    const token = authHeader.split(" ")[1];
+    const token = authHeader.split(' ')[1];
 
     const decoded = verifyToken(token);
+    console.log('decoded token:', decoded);
 
     if (!decoded) {
       throw new ApiError(401, 'Invalid token');
@@ -61,17 +59,18 @@ export const authenticateApplicant = async (
     const applicant = await prisma.applicant.findUnique({
       where: { id: decoded.id },
     });
+    console.log('applicant from DB:', applicant);
 
     if (!applicant) {
       throw new ApiError(404, 'User not found');
     }
 
-    req.user = applicant; // attach user info to req
+    authReq.authUser = applicant; // attach full applicant object to req
     next();
   } catch (error: unknown) {
     return res.status(401).json({
       success: false,
-      message: "Invalid or expired token",
+      message: 'Invalid or expired token',
     });
   }
 };
