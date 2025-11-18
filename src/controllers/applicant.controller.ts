@@ -2,11 +2,11 @@ import { Request, Response } from 'express';
 import { ApplicantSchema } from '../dtos/applicant/applicant.dto.js';
 import { setPasswordSchema } from '../dtos/applicant/applicantPassword.dto.js';
 import { updateApplicantSchema } from '../dtos/applicant/applicantUpdate.dto.js';
-import {
-  createApplicantService,
-  setApplicantPassword,
-  updateApplicantService,
-} from '../services/applicant.service.js';
+import { createApplicantService, setApplicantPassword, updateApplicantService } from '../services/applicant.service.js';
+import { changePasswordDTO } from "../dtos/applicant/changePassword.dto.js";
+import { changePasswordService } from "../services/applicant.service.js";
+import { AuthRequest } from '../interfaces/jwt.interface.js';
+
 export const createApplicant = async (req: Request, res: Response) => {
   try {
     // Extract uploaded files
@@ -100,5 +100,30 @@ export const setPassword = async (req: Request, res: Response) => {
   } catch (error: unknown) {
     console.error(error);
     return res.status(500).json({ message: 'Failed to set password' });
+  }
+};
+
+export const changePasswordController = async (req: Request, res: Response) => {
+  try {
+    const parsed = changePasswordDTO.safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json({ message: "Invalid data", error: parsed.error });
+    }
+
+    //check if user exists
+    const authReq = req as AuthRequest;
+
+if (!authReq.authUser) {
+  return res.status(404).json({ message: "User not found" });
+}
+
+const userId = authReq.authUser.id;
+
+    await changePasswordService(userId, parsed.data);
+
+    return res.json({ message: "Password updated successfully" });
+  } catch (error: unknown) {
+    console.error(error);
+    return res.status(500).json({ message: 'Failed to update password' });
   }
 };

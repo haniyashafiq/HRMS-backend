@@ -17,3 +17,5 @@ export const loginApplicant = async (req: Request, res: Response) => {
     res.status(400).json({ success: false, message });
   }
 };
+
+

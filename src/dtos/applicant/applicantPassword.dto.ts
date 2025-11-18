@@ -9,3 +9,7 @@ export const setPasswordSchema = z.object({
 });
 
 export type SetPasswordDTO = z.infer<typeof setPasswordSchema>;
+
+export type InternalSetPasswordDTO = {
+  password: string;
+};

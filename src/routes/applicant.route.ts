@@ -9,7 +9,7 @@ import { getMyProfile } from '../controllers/applicant.profile.controller.js';
 import { authenticateApplicant } from '../middlewares/auth.middleware.js';
 import { upload } from '../middlewares/upload.middleware.js';
 import { updateMyProfile } from '../controllers/applicant.profile.controller.js';
-
+import { changePasswordController } from '../controllers/applicant.controller.js';
 const router = Router();
 
 router.post(
@@ -41,5 +41,6 @@ router.put('/:id', updateApplicant);
 
 // Set password
 router.post('/:id/set-password', setPassword);
+router.post("/change-password", authenticateApplicant, changePasswordController);
 
 export default router;
