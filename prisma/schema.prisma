@@ -254,7 +254,7 @@ model Leave {
 }
 
 model Applicant {
-  id             Int       @id @default(autoincrement())
+  id             Int           @id @default(autoincrement())
   name           String
   cnic           String
   city           String
@@ -262,15 +262,59 @@ model Applicant {
   previousOrg    String
   contactNumber  String
   whatsappNumber String
-  email          String     @unique
+  email          String        @unique
   linkedin       String?
   domainApplied  String
-  tools          String[]   // many selected tools
+  tools          String[] // many selected tools
   github         String?
-  profilePhoto   String?    // file URL
-  resume         String?    // file URL
-  certificates   String[]   // array of file URLs
+  profilePhoto   String? // file URL
+  resume         String? // file URL
+  certificates   String[] // array of file URLs
   passwordHash   String?
-  createdAt      DateTime   @default(now())
+  createdAt      DateTime      @default(now())
+  applications   Application[]
 }
 
+model Company {
+  id        Int      @id @default(autoincrement())
+  name      String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  positions    Position[]
+  applications Application[]
+}
+
+model Position {
+  id        Int     @id @default(autoincrement())
+  title     String
+  domain    String?
+  city      String?
+  companyId Int
+  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  applications Application[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([companyId])
+}
+
+model Application {
+  id          Int       @id @default(autoincrement())
+  applicantId Int
+  applicant   Applicant @relation(fields: [applicantId], references: [id], onDelete: Cascade)
+  companyId   Int
+  company     Company   @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  positionId  Int?
+  position    Position? @relation(fields: [positionId], references: [id], onDelete: SetNull)
+  domain      String?
+  city        String?
+  status      String    @default("SUBMITTED") // simple status (SUBMITTED, REVIEWED, REJECTED, HIRED)
+  createdAt   DateTime  @default(now())
+
+  @@index([applicantId])
+  @@index([companyId])
+  @@index([positionId])
+}
